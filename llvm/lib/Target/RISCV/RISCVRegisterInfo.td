@@ -143,6 +143,10 @@ def GPRNoX0X2 : RegisterClass<"RISCV", [XLenVT], 32, (sub GPR, X0, X2)> {
   let RegInfos = XLenRI;
 }
 
+def GPRX1X5 : RegisterClass<"RISCV", [XLenVT], 32, (add X1, X5)> {
+  let RegInfos = XLenRI;
+}
+
 // Don't use X1 or X5 for JALR since that is a hint to pop the return address
 // stack on some microarchitectures. Also remove the reserved registers X0, X2,
 // X3, and X4 as it reduces the number of register classes that get synthesized

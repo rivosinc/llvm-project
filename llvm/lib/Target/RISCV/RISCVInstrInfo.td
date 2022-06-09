@@ -1893,6 +1893,7 @@ include "RISCVInstrInfoZk.td"
 include "RISCVInstrInfoV.td"
 include "RISCVInstrInfoZfh.td"
 include "RISCVInstrInfoZicbo.td"
+include "RISCVInstrInfoZisslpcfi.td"
 
 //===----------------------------------------------------------------------===//
 // Vendor extensions

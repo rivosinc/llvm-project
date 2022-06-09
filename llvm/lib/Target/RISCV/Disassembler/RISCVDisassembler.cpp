@@ -241,6 +241,17 @@ static DecodeStatus DecodeVRM8RegisterClass(MCInst &Inst, uint32_t RegNo,
   return MCDisassembler::Success;
 }
 
+static DecodeStatus DecodeGPRX1X5RegisterClass(MCInst &Inst, uint64_t RegNo,
+                                               uint64_t Address,
+                                               const MCDisassembler *Decoder) {
+  if (RegNo != 1 && RegNo != 5)
+    return MCDisassembler::Fail;
+
+  MCRegister Reg = RISCV::X0 + RegNo;
+  Inst.addOperand(MCOperand::createReg(Reg));
+  return MCDisassembler::Success;
+}
+
 static DecodeStatus decodeVMaskReg(MCInst &Inst, uint64_t RegNo,
                                    uint64_t Address,
                                    const MCDisassembler *Decoder) {

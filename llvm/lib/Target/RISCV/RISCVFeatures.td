@@ -452,6 +452,13 @@ def HasStdExtZawrs : Predicate<"Subtarget->hasStdExtZawrs()">,
                                AssemblerPredicate<(all_of FeatureStdExtZawrs),
                                "'Zawrs' (Wait on Reservation Set)">;
 
+def FeatureStdExtZisslpcfi
+    : SubtargetFeature<"experimental-zisslpcfi", "HasStdExtZisslpcfi", "true",
+                       "'Zisslpcfi' (Control-Flow Integrity Instructions)">;
+def HasStdExtZisslpcfi : Predicate<"Subtarget->hasStdExtZisslpcfi()">,
+                             AssemblerPredicate<(all_of FeatureStdExtZisslpcfi),
+                             "'Zisslpcfi' (Control-Flow Integrity Instructions)">;
+
 //===----------------------------------------------------------------------===//
 // Vendor extensions
 //===----------------------------------------------------------------------===//

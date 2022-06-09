@@ -346,6 +346,15 @@ def : SysReg<"dscratch0", 0x7B2>;
 def : SysReg<"dscratch1", 0x7B3>;
 
 //===----------------------------------------------------------------------===//
+// Rivos Landing Pad for Forward Control-Flow Integrity
+//===----------------------------------------------------------------------===//
+def : SysReg<"lplr", 0x006>;
+def : SysReg<"ssp", 0x020>;
+def : SysReg<"scfistatus", 0x10B>;
+def : SysReg<"vscfistatus", 0x20B>;
+def : SysReg<"mcfistatus", 0x30B>;
+
+//===----------------------------------------------------------------------===//
 // User Vector CSRs
 //===----------------------------------------------------------------------===//
 def : SysReg<"vstart", 0x008>;
