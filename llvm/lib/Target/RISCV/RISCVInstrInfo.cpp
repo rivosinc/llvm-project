@@ -2739,6 +2739,16 @@ bool RISCVInstrInfo::hasAllNBitUsers(const MachineInstr &OrigMI,
   return true;
 }
 
+bool RISCVInstrInfo::isSchedulingBoundary(const MachineInstr &MI,
+                                          const MachineBasicBlock *MBB,
+                                          const MachineFunction &MF) const {
+  // Do not schedule around landing-pad checks.
+  unsigned Opcode = MI.getOpcode();
+  if (Opcode == RISCV::LPCLL)
+    return true;
+  return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
+}
+
 // Returns true if this is the sext.w pattern, addiw rd, rs1, 0.
 bool RISCV::isSEXT_W(const MachineInstr &MI) {
   return MI.getOpcode() == RISCV::ADDIW && MI.getOperand(1).isReg() &&

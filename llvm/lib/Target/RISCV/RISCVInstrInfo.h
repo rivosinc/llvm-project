@@ -232,6 +232,11 @@ public:
     return hasAllNBitUsers(MI, MRI, 32);
   }
 
+  /// Prevent landing-pad instrucions (CJLP & JLP) from being re-scheduled.
+  bool isSchedulingBoundary(const MachineInstr &MI,
+                            const MachineBasicBlock *MBB,
+                            const MachineFunction &MF) const override;
+
 protected:
   const RISCVSubtarget &STI;
 };

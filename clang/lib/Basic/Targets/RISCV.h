@@ -108,7 +108,12 @@ public:
   void fillValidCPUList(SmallVectorImpl<StringRef> &Values) const override;
   bool isValidTuneCPUName(StringRef Name) const override;
   void fillValidTuneCPUList(SmallVectorImpl<StringRef> &Values) const override;
+  bool
+  checkCFProtectionBranchSupported(DiagnosticsEngine &Diags) const override {
+    return true;
+  };
 };
+
 class LLVM_LIBRARY_VISIBILITY RISCV32TargetInfo : public RISCVTargetInfo {
 public:
   RISCV32TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)

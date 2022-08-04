@@ -4109,9 +4109,19 @@ static bool isStrictlyPreprocessorAction(frontend::ActionKind Action) {
   llvm_unreachable("invalid frontend action");
 }
 
+static StringRef GetCFProtectionMacroName(const llvm::Triple &T) {
+  llvm::Triple::ArchType Arch = T.getArch();
+  if (Arch == llvm::Triple::x86 || Arch == llvm::Triple::x86_64)
+    return "__CET__";
+  if (Arch == llvm::Triple::riscv32 || Arch == llvm::Triple::riscv64)
+    return "__RISCV_ZISSLPCFI__";
+  return "";
+}
+
 static void GeneratePreprocessorArgs(PreprocessorOptions &Opts,
                                      SmallVectorImpl<const char *> &Args,
                                      CompilerInvocation::StringAllocator SA,
+                                     const llvm::Triple &T,
                                      const LangOptions &LangOpts,
                                      const FrontendOptions &FrontendOpts,
                                      const CodeGenOptions &CodeGenOpts) {
@@ -4134,19 +4144,21 @@ static void GeneratePreprocessorArgs(PreprocessorOptions &Opts,
                     (Opts.PrecompiledPreambleBytes.second ? "1" : "0"),
                 SA);
 
+  StringRef CFProtectionMacroName = GetCFProtectionMacroName(T);
   for (const auto &M : Opts.Macros) {
-    // Don't generate __CET__ macro definitions. They are implied by the
-    // -fcf-protection option that is generated elsewhere.
-    if (M.first == "__CET__=1" && !M.second &&
-        !CodeGenOpts.CFProtectionReturn && CodeGenOpts.CFProtectionBranch)
-      continue;
-    if (M.first == "__CET__=2" && !M.second && CodeGenOpts.CFProtectionReturn &&
-        !CodeGenOpts.CFProtectionBranch)
-      continue;
-    if (M.first == "__CET__=3" && !M.second && CodeGenOpts.CFProtectionReturn &&
-        CodeGenOpts.CFProtectionBranch)
-      continue;
-
+    if (CFProtectionMacroName.size() > 0) {
+      // Don't generate CFProtection macro definitions. They are implied
+      // by the -fcf-protection option that is generated elsewhere.
+      if (StringRef(M.first).endswith("=1") && !M.second &&
+          !CodeGenOpts.CFProtectionReturn && CodeGenOpts.CFProtectionBranch)
+        continue;
+      if (StringRef(M.first).endswith("=2") && !M.second &&
+          CodeGenOpts.CFProtectionReturn && !CodeGenOpts.CFProtectionBranch)
+        continue;
+      if (StringRef(M.first).endswith("=3") && !M.second &&
+          CodeGenOpts.CFProtectionReturn && CodeGenOpts.CFProtectionBranch)
+        continue;
+    }
     GenerateArg(Args, M.second ? OPT_U : OPT_D, M.first, SA);
   }
 
@@ -4180,6 +4192,7 @@ static void GeneratePreprocessorArgs(PreprocessorOptions &Opts,
 
 static bool ParsePreprocessorArgs(PreprocessorOptions &Opts, ArgList &Args,
                                   DiagnosticsEngine &Diags,
+                                  const llvm::Triple &T,
                                   frontend::ActionKind Action,
                                   const FrontendOptions &FrontendOpts) {
   unsigned NumErrorsBefore = Diags.getNumErrors();
@@ -4213,15 +4226,19 @@ static bool ParsePreprocessorArgs(PreprocessorOptions &Opts, ArgList &Args,
     }
   }
 
-  // Add the __CET__ macro if a CFProtection option is set.
+  // Add the a macro if a CFProtection option is set.
   if (const Arg *A = Args.getLastArg(OPT_fcf_protection_EQ)) {
-    StringRef Name = A->getValue();
-    if (Name == "branch")
-      Opts.addMacroDef("__CET__=1");
-    else if (Name == "return")
-      Opts.addMacroDef("__CET__=2");
-    else if (Name == "full")
-      Opts.addMacroDef("__CET__=3");
+    StringRef CFProtectionMacroName = GetCFProtectionMacroName(T);
+    if (CFProtectionMacroName.size() > 0) {
+      StringRef Name = A->getValue();
+      SmallString<32> TmpBuffer;
+      if (Name == "branch")
+        Opts.addMacroDef((CFProtectionMacroName + "=1").toStringRef(TmpBuffer));
+      else if (Name == "return")
+        Opts.addMacroDef((CFProtectionMacroName + "=2").toStringRef(TmpBuffer));
+      else if (Name == "full")
+        Opts.addMacroDef((CFProtectionMacroName + "=3").toStringRef(TmpBuffer));
+    }
   }
 
   // Add macros from the command line.
@@ -4439,7 +4456,7 @@ bool CompilerInvocation::CreateFromArgsImpl(
       !LangOpts.Sanitize.has(SanitizerKind::Memory) &&
       !LangOpts.Sanitize.has(SanitizerKind::KernelMemory);
 
-  ParsePreprocessorArgs(Res.getPreprocessorOpts(), Args, Diags,
+  ParsePreprocessorArgs(Res.getPreprocessorOpts(), Args, Diags, T,
                         Res.getFrontendOpts().ProgramAction,
                         Res.getFrontendOpts());
   ParsePreprocessorOutputArgs(Res.getPreprocessorOutputOpts(), Args, Diags,
@@ -4610,8 +4627,8 @@ void CompilerInvocation::generateCC1CommandLine(
   GenerateLangArgs(*LangOpts, Args, SA, T, FrontendOpts.DashX);
   GenerateCodeGenArgs(CodeGenOpts, Args, SA, T, FrontendOpts.OutputFile,
                       &*LangOpts);
-  GeneratePreprocessorArgs(*PreprocessorOpts, Args, SA, *LangOpts, FrontendOpts,
-                           CodeGenOpts);
+  GeneratePreprocessorArgs(*PreprocessorOpts, Args, SA, T, *LangOpts,
+                           FrontendOpts, CodeGenOpts);
   GeneratePreprocessorOutputArgs(PreprocessorOutputOpts, Args, SA,
                                  FrontendOpts.ProgramAction);
   GenerateDependencyOutputArgs(DependencyOutputOpts, Args, SA);

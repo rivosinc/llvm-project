@@ -165,6 +165,7 @@
 ; CHECK-NEXT:       Implement the 'patchable-function' attribute
 ; CHECK-NEXT:       Branch relaxation pass
 ; CHECK-NEXT:       RISCV Make Compressible
+; CHECK-NEXT:       Forward-CFI Landing Pads
 ; CHECK-NEXT:       Contiguously Lay Out Funclets
 ; CHECK-NEXT:       StackMap Liveness Analysis
 ; CHECK-NEXT:       Live DEBUG_VALUE analysis

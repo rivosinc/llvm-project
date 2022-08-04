@@ -329,6 +329,7 @@ void RISCVPassConfig::addPreSched2() {}
 void RISCVPassConfig::addPreEmitPass() {
   addPass(&BranchRelaxationPassID);
   addPass(createRISCVMakeCompressibleOptPass());
+  addPass(createRISCVForwardCFIPass());
 }
 
 void RISCVPassConfig::addPreEmitPass2() {

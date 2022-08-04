@@ -75,6 +75,8 @@ FunctionPass *createRISCVInitUndefPass();
 void initializeRISCVInitUndefPass(PassRegistry &);
 extern char &RISCVInitUndefID;
 
+FunctionPass *createRISCVForwardCFIPass();
+
 InstructionSelector *createRISCVInstructionSelector(const RISCVTargetMachine &,
                                                     RISCVSubtarget &,
                                                     RISCVRegisterBankInfo &);
