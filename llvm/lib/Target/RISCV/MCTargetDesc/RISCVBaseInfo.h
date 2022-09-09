@@ -405,6 +405,9 @@ MCRegister getBPReg();
 // Returns the register holding shadow call stack pointer.
 MCRegister getSCSPReg();
 
+// Returns the scratch register to use for checking the call stack pointer
+MCRegister getSCSCheckReg();
+
 } // namespace RISCVABI
 
 namespace RISCVFeatures {

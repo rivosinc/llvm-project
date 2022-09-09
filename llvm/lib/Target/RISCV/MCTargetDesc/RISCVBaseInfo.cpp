@@ -92,6 +92,9 @@ MCRegister getBPReg() { return RISCV::X9; }
 // Returns the register holding shadow call stack pointer.
 MCRegister getSCSPReg() { return RISCV::X18; }
 
+// Returns the scratch register to use for checking the call stack pointer
+MCRegister getSCSCheckReg() { return RISCV::X5; }
+
 } // namespace RISCVABI
 
 namespace RISCVFeatures {

@@ -112,6 +112,11 @@ public:
   checkCFProtectionBranchSupported(DiagnosticsEngine &Diags) const override {
     return true;
   };
+
+  bool
+  checkCFProtectionReturnSupported(DiagnosticsEngine &Diags) const override {
+    return true;
+  };
 };
 
 class LLVM_LIBRARY_VISIBILITY RISCV32TargetInfo : public RISCVTargetInfo {
