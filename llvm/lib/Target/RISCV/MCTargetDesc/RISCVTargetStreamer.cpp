@@ -14,6 +14,9 @@
 #include "RISCVBaseInfo.h"
 #include "RISCVMCTargetDesc.h"
 #include "llvm/MC/MCSymbol.h"
+#include "llvm/BinaryFormat/ELF.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCSectionELF.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/RISCVAttributes.h"
 #include "llvm/Support/RISCVISAInfo.h"
@@ -60,6 +63,42 @@ void RISCVTargetStreamer::emitTargetAttributes(const MCSubtargetInfo &STI) {
     auto &ISAInfo = *ParseResult;
     emitTextAttribute(RISCVAttrs::ARCH, ISAInfo->toString());
   }
+}
+
+void RISCVTargetStreamer::emitNoteSection(int WordSize, unsigned Flags) {
+  if (Flags == 0)
+    return;
+
+  MCStreamer &OutStreamer = getStreamer();
+  MCContext &Context = OutStreamer.getContext();
+  // Emit a .note.gnu.property section with the flags.
+  MCSectionELF *Nt = Context.getELFSection(".note.gnu.property", ELF::SHT_NOTE,
+                                           ELF::SHF_ALLOC);
+  if (Nt->isRegistered()) {
+    SMLoc Loc;
+    Context.reportWarning(
+        Loc,
+        "The .note.gnu.property is not emitted because it is already present.");
+    return;
+  }
+  MCSection *Cur = OutStreamer.getCurrentSectionOnly();
+  OutStreamer.switchSection(Nt);
+
+  // Emit the note header.
+  OutStreamer.emitValueToAlignment(Align(WordSize).value());
+  OutStreamer.emitIntValue(4, 4);     // data size for "GNU\0"
+  OutStreamer.emitIntValue(8 + WordSize, 4); // Elf_Prop size
+  OutStreamer.emitIntValue(ELF::NT_GNU_PROPERTY_TYPE_0, 4);
+  OutStreamer.emitBytes(StringRef("GNU", 4)); // note name
+
+  // Emit the PAC/BTI properties.
+  OutStreamer.emitIntValue(ELF::GNU_PROPERTY_RISCV_FEATURE_1_AND, 4);
+  OutStreamer.emitIntValue(4, 4);     // data size
+  OutStreamer.emitIntValue(Flags, 4); // data
+  OutStreamer.emitValueToAlignment(Align(WordSize).value()); // padding
+
+  OutStreamer.endSection(Nt);
+  OutStreamer.switchSection(Cur);
 }
 
 // This part is for ascii assembly output

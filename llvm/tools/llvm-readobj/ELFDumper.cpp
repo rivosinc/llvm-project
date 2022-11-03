@@ -4954,6 +4954,24 @@ static std::string getGNUProperty(uint32_t Type, uint32_t DataSize,
         OS << ", ";
     }
   };
+  auto Feature1 = [&](StringRef ArchName, uint32_t Bit1, StringRef Name1,
+                      uint32_t Bit2, StringRef Name2) {
+    OS << ArchName << " feature: ";
+    if (DataSize != 4) {
+      OS << format("<corrupt length: 0x%x>", DataSize);
+      return OS.str();
+    }
+    PrData = support::endian::read32<ELFT::TargetEndianness>(Data.data());
+    if (PrData == 0) {
+      OS << "<None>";
+      return OS.str();
+    }
+    DumpBit(Bit1, Name1);
+    DumpBit(Bit2, Name2);
+    if (PrData)
+      OS << format("<unknown flags: 0x%x>", PrData);
+    return OS.str();
+  };
 
   switch (Type) {
   default:
@@ -4974,28 +4992,17 @@ static std::string getGNUProperty(uint32_t Type, uint32_t DataSize,
       OS << format(" <corrupt length: 0x%x>", DataSize);
     return OS.str();
   case GNU_PROPERTY_AARCH64_FEATURE_1_AND:
+    return Feature1("aarch64",
+                    GNU_PROPERTY_AARCH64_FEATURE_1_BTI, "BTI",
+                    GNU_PROPERTY_AARCH64_FEATURE_1_PAC, "PAC");
   case GNU_PROPERTY_X86_FEATURE_1_AND:
-    OS << ((Type == GNU_PROPERTY_AARCH64_FEATURE_1_AND) ? "aarch64 feature: "
-                                                        : "x86 feature: ");
-    if (DataSize != 4) {
-      OS << format("<corrupt length: 0x%x>", DataSize);
-      return OS.str();
-    }
-    PrData = support::endian::read32<ELFT::TargetEndianness>(Data.data());
-    if (PrData == 0) {
-      OS << "<None>";
-      return OS.str();
-    }
-    if (Type == GNU_PROPERTY_AARCH64_FEATURE_1_AND) {
-      DumpBit(GNU_PROPERTY_AARCH64_FEATURE_1_BTI, "BTI");
-      DumpBit(GNU_PROPERTY_AARCH64_FEATURE_1_PAC, "PAC");
-    } else {
-      DumpBit(GNU_PROPERTY_X86_FEATURE_1_IBT, "IBT");
-      DumpBit(GNU_PROPERTY_X86_FEATURE_1_SHSTK, "SHSTK");
-    }
-    if (PrData)
-      OS << format("<unknown flags: 0x%x>", PrData);
-    return OS.str();
+    return Feature1("x86",
+                    GNU_PROPERTY_X86_FEATURE_1_IBT, "IBT",
+                    GNU_PROPERTY_X86_FEATURE_1_SHSTK, "SHSTK");
+  case GNU_PROPERTY_RISCV_FEATURE_1_AND:
+    return Feature1("riscv",
+                    GNU_PROPERTY_RISCV_FEATURE_1_FCFI, "FCFI",
+                    GNU_PROPERTY_RISCV_FEATURE_1_BCFI, "BCFI");
   case GNU_PROPERTY_X86_FEATURE_2_NEEDED:
   case GNU_PROPERTY_X86_FEATURE_2_USED:
     OS << "x86 feature "

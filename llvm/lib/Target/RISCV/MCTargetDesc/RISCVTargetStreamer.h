@@ -25,6 +25,8 @@ public:
   void finish() override;
   virtual void reset();
 
+  void emitNoteSection(int WordSize, unsigned Flags);
+
   virtual void emitDirectiveOptionPush();
   virtual void emitDirectiveOptionPop();
   virtual void emitDirectiveOptionPIC();

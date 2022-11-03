@@ -206,8 +206,20 @@ void RISCVAsmPrinter::emitStartOfAsmFile(Module &M) {
   if (const MDString *ModuleTargetABI =
           dyn_cast_or_null<MDString>(M.getModuleFlag("target-abi")))
     RTS.setTargetABI(RISCVABI::getTargetABI(ModuleTargetABI->getString()));
-  if (TM.getTargetTriple().isOSBinFormatELF())
-    emitAttributes();
+  if (!TM.getTargetTriple().isOSBinFormatELF())
+    return;
+
+  emitAttributes();
+
+  unsigned Flags = 0;
+  if (M.getModuleFlag("cf-protection-branch"))
+    Flags |= ELF::GNU_PROPERTY_RISCV_FEATURE_1_FCFI;
+  if (M.getModuleFlag("cf-protection-return"))
+    Flags |= ELF::GNU_PROPERTY_RISCV_FEATURE_1_BCFI;
+  if (Flags) {
+    int WordSize = TM.getTargetTriple().isArch64Bit() ? 8 : 4;
+    RTS.emitNoteSection(WordSize, Flags);
+  }
 }
 
 void RISCVAsmPrinter::emitEndOfAsmFile(Module &M) {
