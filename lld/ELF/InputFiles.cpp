@@ -871,10 +871,6 @@ template <class ELFT> static uint32_t readAndFeatures(const InputSection &sec) {
       continue;
     }
 
-    uint32_t featureAndType = config->emachine == EM_AARCH64
-                                  ? GNU_PROPERTY_AARCH64_FEATURE_1_AND
-                                  : GNU_PROPERTY_X86_FEATURE_1_AND;
-
     // Read a body of a NOTE record, which consists of type-length-value fields.
     ArrayRef<uint8_t> desc = note.getDesc();
     while (!desc.empty()) {
@@ -887,6 +883,7 @@ template <class ELFT> static uint32_t readAndFeatures(const InputSection &sec) {
       if (desc.size() < size)
         reportFatal(place, "program property is too short");
 
+      uint32_t featureAndType = getFeatureAndType(config->emachine);
       if (type == featureAndType) {
         // We found a FEATURE_1_AND field. There may be more than one of these
         // in a .note.gnu.property section, for a relocatable object we
@@ -1745,6 +1742,20 @@ ELFFileBase *elf::createObjFile(MemoryBufferRef mb, StringRef archiveName,
   f->init();
   f->lazy = lazy;
   return f;
+}
+
+unsigned elf::getFeatureAndType(uint16_t emachine) {
+  switch (emachine) {
+  case EM_AARCH64:
+    return GNU_PROPERTY_AARCH64_FEATURE_1_AND;
+  case EM_386:
+  case EM_X86_64:
+    return GNU_PROPERTY_X86_FEATURE_1_AND;
+  case EM_RISCV:
+    return GNU_PROPERTY_RISCV_FEATURE_1_AND;
+  default:
+    llvm_unreachable("getFeatureAndType");
+  }
 }
 
 template <class ELFT> void ObjFile<ELFT>::parseLazy() {

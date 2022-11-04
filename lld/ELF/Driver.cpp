@@ -403,6 +403,15 @@ static void checkOptions() {
   if (config->emachine != EM_386 && config->emachine != EM_X86_64 &&
       config->zCetReport != "none")
     error("-z cet-report only supported on X86 and X86_64");
+
+  if (config->emachine != EM_RISCV) {
+    if (config->zForceFcfi)
+      error("-z force-fcfi only supported on RISCV");
+    if (config->zForceBcfi)
+      error("-z force-bcfi only supported on RISCV");
+    if (config->zCfiReport != "none")
+      error("-z cfi-report only supported on RISCV");
+  }
 }
 
 static const char *getReproduceOption(opt::InputArgList &args) {
@@ -480,6 +489,8 @@ constexpr const char *knownZFlags[] = {
     "execstack",
     "force-bti",
     "force-ibt",
+    "force-fcfi",
+    "force-bcfi",
     "global",
     "hazardplt",
     "ifunc-noplt",
@@ -522,7 +533,7 @@ constexpr const char *knownZFlags[] = {
 static bool isKnownZFlag(StringRef s) {
   return llvm::is_contained(knownZFlags, s) ||
          s.startswith("common-page-size=") || s.startswith("bti-report=") ||
-         s.startswith("cet-report=") ||
+         s.startswith("cet-report=") || s.startswith("cfi-report=") ||
          s.startswith("dead-reloc-in-nonalloc=") ||
          s.startswith("max-page-size=") || s.startswith("stack-size=") ||
          s.startswith("start-stop-visibility=");
@@ -1047,7 +1058,7 @@ static void parseClangOption(StringRef opt, const Twine &msg) {
   error(msg + ": " + StringRef(err).trim());
 }
 
-// Checks the parameter of the bti-report and cet-report options.
+// Checks the parameter of the {bti,cet,cfi}-report options.
 static bool isValidReportString(StringRef arg) {
   return arg == "none" || arg == "warning" || arg == "error";
 }
@@ -1260,6 +1271,8 @@ static void readConfigs(opt::InputArgList &args) {
   config->zCopyreloc = getZFlag(args, "copyreloc", "nocopyreloc", true);
   config->zForceBti = hasZOption(args, "force-bti");
   config->zForceIbt = hasZOption(args, "force-ibt");
+  config->zForceFcfi = hasZOption(args, "force-fcfi");
+  config->zForceBcfi = hasZOption(args, "force-bcfi");
   config->zGlobal = hasZOption(args, "global");
   config->zGnustack = getZGnuStack(args);
   config->zHazardplt = hasZOption(args, "hazardplt");
@@ -1314,7 +1327,8 @@ static void readConfigs(opt::InputArgList &args) {
   }
 
   auto reports = {std::make_pair("bti-report", &config->zBtiReport),
-                  std::make_pair("cet-report", &config->zCetReport)};
+                  std::make_pair("cet-report", &config->zCetReport),
+                  std::make_pair("cfi-report", &config->zCfiReport)};
   for (opt::Arg *arg : args.filtered(OPT_z)) {
     std::pair<StringRef, StringRef> option =
         StringRef(arg->getValue()).split('=');
@@ -2388,7 +2402,7 @@ static void checkAndReportMissingFeature(StringRef config, uint32_t features,
 // GNU_PROPERTY_AARCH64_FEATURE_1_AND mechanism.
 static uint32_t getAndFeatures() {
   if (config->emachine != EM_386 && config->emachine != EM_X86_64 &&
-      config->emachine != EM_AARCH64)
+      config->emachine != EM_AARCH64 && config->emachine != EM_RISCV)
     return 0;
 
   uint32_t ret = -1;
@@ -2410,6 +2424,16 @@ static uint32_t getAndFeatures() {
         toString(f) + ": -z cet-report: file does not have "
                       "GNU_PROPERTY_X86_FEATURE_1_SHSTK property");
 
+    checkAndReportMissingFeature(
+        config->zCfiReport, features, GNU_PROPERTY_RISCV_FEATURE_1_FCFI,
+        toString(f) + ": -z cfi-report: file does not have "
+                      "GNU_PROPERTY_RISCV_FEATURE_1_FCFI property");
+
+    checkAndReportMissingFeature(
+        config->zCfiReport, features, GNU_PROPERTY_RISCV_FEATURE_1_BCFI,
+        toString(f) + ": -z cfi-report: file does not have "
+                      "GNU_PROPERTY_RISCV_FEATURE_1_BCFI property");
+
     if (config->zForceBti && !(features & GNU_PROPERTY_AARCH64_FEATURE_1_BTI)) {
       features |= GNU_PROPERTY_AARCH64_FEATURE_1_BTI;
       if (config->zBtiReport == "none")
@@ -2421,7 +2445,14 @@ static uint32_t getAndFeatures() {
         warn(toString(f) + ": -z force-ibt: file does not have "
                            "GNU_PROPERTY_X86_FEATURE_1_IBT property");
       features |= GNU_PROPERTY_X86_FEATURE_1_IBT;
+    } else if (config->zForceFcfi &&
+               !(features & GNU_PROPERTY_RISCV_FEATURE_1_FCFI)) {
+      if (config->zCfiReport == "none")
+        warn(toString(f) + ": -z force-fcfi: file does not have "
+                           "GNU_PROPERTY_RISCV_FEATURE_1_FCFI property");
+      features |= GNU_PROPERTY_RISCV_FEATURE_1_FCFI;
     }
+
     if (config->zPacPlt && !(features & GNU_PROPERTY_AARCH64_FEATURE_1_PAC)) {
       warn(toString(f) + ": -z pac-plt: file does not have "
                          "GNU_PROPERTY_AARCH64_FEATURE_1_PAC property");
@@ -2433,6 +2464,8 @@ static uint32_t getAndFeatures() {
   // Force enable Shadow Stack.
   if (config->zShstk)
     ret |= GNU_PROPERTY_X86_FEATURE_1_SHSTK;
+  if (config->zForceBcfi)
+    ret |= GNU_PROPERTY_RISCV_FEATURE_1_BCFI;
 
   return ret;
 }

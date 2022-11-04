@@ -168,6 +168,7 @@ struct Config {
   llvm::StringRef whyExtract;
   StringRef zBtiReport = "none";
   StringRef zCetReport = "none";
+  StringRef zCfiReport = "none";
   llvm::StringRef ltoBasicBlockSections;
   std::pair<llvm::StringRef, llvm::StringRef> thinLTOObjectSuffixReplace;
   std::pair<llvm::StringRef, llvm::StringRef> thinLTOPrefixReplace;
@@ -275,6 +276,8 @@ struct Config {
   bool zCopyreloc;
   bool zForceBti;
   bool zForceIbt;
+  bool zForceFcfi;
+  bool zForceBcfi;
   bool zGlobal;
   bool zHazardplt;
   bool zIfuncNoplt;

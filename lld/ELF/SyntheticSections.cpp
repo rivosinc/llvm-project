@@ -307,10 +307,7 @@ GnuPropertySection::GnuPropertySection()
                        config->wordsize, ".note.gnu.property") {}
 
 void GnuPropertySection::writeTo(uint8_t *buf) {
-  uint32_t featureAndType = config->emachine == EM_AARCH64
-                                ? GNU_PROPERTY_AARCH64_FEATURE_1_AND
-                                : GNU_PROPERTY_X86_FEATURE_1_AND;
-
+  uint32_t featureAndType = getFeatureAndType(config->emachine);
   write32(buf, 4);                                   // Name size
   write32(buf + 4, config->is64 ? 16 : 12);          // Content size
   write32(buf + 8, NT_GNU_PROPERTY_TYPE_0);          // Type

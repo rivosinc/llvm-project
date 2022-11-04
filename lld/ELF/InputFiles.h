@@ -374,6 +374,8 @@ public:
 ELFFileBase *createObjFile(MemoryBufferRef mb, StringRef archiveName = "",
                            bool lazy = false);
 
+uint32_t getFeatureAndType(uint16_t emachine);
+
 std::string replaceThinLTOSuffix(StringRef path);
 
 } // namespace elf
