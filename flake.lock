@@ -1,0 +1,43 @@
+{
+  "nodes": {
+    "nix-filter": {
+      "locked": {
+        "lastModified": 1678109515,
+        "narHash": "sha256-C2X+qC80K2C1TOYZT8nabgo05Dw2HST/pSn6s+n6BO8=",
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "rev": "aa9ff6ce4a7f19af6415fb3721eaa513ea6c763c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1680910012,
+        "narHash": "sha256-h8XSy1tRrbBLzHLJhaOYnXr1soxj1eIMZbVeSvphHSs=",
+        "owner": "rivosinc",
+        "repo": "nixpkgs",
+        "rev": "345b1205d27cd6461d26ceccfd21387ce8c6191f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rivosinc",
+        "ref": "rivos/nixos-22.11",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "nix-filter": "nix-filter",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

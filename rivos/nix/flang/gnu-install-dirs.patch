@@ -1,0 +1,15 @@
+diff --git a/cmake/modules/AddFlang.cmake b/cmake/modules/AddFlang.cmake
+index c54c30dbf6df..9f2a6b5b90a3 100644
+--- a/cmake/modules/AddFlang.cmake
++++ b/cmake/modules/AddFlang.cmake
+@@ -71,8 +71,8 @@ macro(add_flang_library name)
+       install(TARGETS ${name}
+         COMPONENT ${name}
+         ${export_to_flangtargets}
+-        LIBRARY DESTINATION lib${LLVM_LIBDIR_SUFFIX}
+-        ARCHIVE DESTINATION lib${LLVM_LIBDIR_SUFFIX}
++        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}${LLVM_LIBDIR_SUFFIX}"
++        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}${LLVM_LIBDIR_SUFFIX}"
+         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+ 
+       if (NOT LLVM_ENABLE_IDE)

@@ -1,0 +1,89 @@
+diff --git a/include/llvm/Support/RISCVISAInfo.h b/include/llvm/Support/RISCVISAInfo.h
+index 9070b88d710e..219435979698 100644
+--- a/include/llvm/Support/RISCVISAInfo.h
++++ b/include/llvm/Support/RISCVISAInfo.h
+@@ -51,6 +51,12 @@ public:
+                   bool ExperimentalExtensionVersionCheck = true,
+                   bool IgnoreUnknown = false);
+ 
++  /// Parse RISCV ISA info from an arch string that is already in normalized
++  /// form (as defined in the psABI). Unlike parseArchString, this function
++  /// will not error for unrecognized extension names or extension versions.
++  static llvm::Expected<std::unique_ptr<RISCVISAInfo>>
++  parseNormalizedArchString(StringRef Arch);
++
+   /// Parse RISCV ISA info from feature vector.
+   static llvm::Expected<std::unique_ptr<RISCVISAInfo>>
+   parseFeatures(unsigned XLen, const std::vector<std::string> &Features);
+diff --git a/lib/Support/RISCVISAInfo.cpp b/lib/Support/RISCVISAInfo.cpp
+index 5cef1333c27b..34ea02b62e6d 100644
+--- a/lib/Support/RISCVISAInfo.cpp
++++ b/lib/Support/RISCVISAInfo.cpp
+@@ -506,6 +506,67 @@ RISCVISAInfo::parseFeatures(unsigned XLen,
+   return RISCVISAInfo::postProcessAndChecking(std::move(ISAInfo));
+ }
+ 
++llvm::Expected<std::unique_ptr<RISCVISAInfo>>
++RISCVISAInfo::parseNormalizedArchString(StringRef Arch) {
++  if (llvm::any_of(Arch, isupper)) {
++    return createStringError(errc::invalid_argument,
++                             "string must be lowercase");
++  }
++  // Must start with a valid base ISA name.
++  unsigned XLen;
++  if (Arch.startswith("rv32i") || Arch.startswith("rv32e"))
++    XLen = 32;
++  else if (Arch.startswith("rv64i") || Arch.startswith("rv64e"))
++    XLen = 64;
++  else
++    return createStringError(errc::invalid_argument,
++                             "arch string must begin with valid base ISA");
++  std::unique_ptr<RISCVISAInfo> ISAInfo(new RISCVISAInfo(XLen));
++  // Discard rv32/rv64 prefix.
++  Arch = Arch.substr(4);
++
++  // Each extension is of the form ${name}${major_version}p${minor_version}
++  // and separated by _. Split by _ and then extract the name and version
++  // information for each extension.
++  SmallVector<StringRef, 8> Split;
++  Arch.split(Split, '_');
++  for (StringRef Ext : Split) {
++    StringRef Prefix, MinorVersionStr;
++    std::tie(Prefix, MinorVersionStr) = Ext.rsplit('p');
++    if (MinorVersionStr.empty())
++      return createStringError(errc::invalid_argument,
++                               "extension lacks version in expected format");
++    unsigned long long MajorVersion, MinorVersion;
++    if (getAsUnsignedInteger(MinorVersionStr, 10, MinorVersion))
++      return createStringError(errc::invalid_argument,
++                               "failed to parse minor version number");
++
++    // Split Prefix into the extension name and the major version number
++    // (the trailing digits of Prefix).
++    int TrailingDigits = 0;
++    StringRef ExtName = Prefix;
++    while (!ExtName.empty()) {
++      if (!isDigit(ExtName.back()))
++        break;
++      ExtName = ExtName.drop_back(1);
++      TrailingDigits++;
++    }
++    if (!TrailingDigits)
++      return createStringError(errc::invalid_argument,
++                               "failed to find major version number");
++
++    StringRef MajorVersionStr = Prefix.take_back(TrailingDigits);
++    if (getAsUnsignedInteger(MajorVersionStr, 10, MajorVersion))
++      return createStringError(errc::invalid_argument,
++                               "failed to parse major version number");
++    ISAInfo->addExtension(ExtName, MajorVersion, MinorVersion);
++  }
++  ISAInfo->updateFLen();
++  ISAInfo->updateMinVLen();
++  ISAInfo->updateMaxELen();
++  return std::move(ISAInfo);
++}
++
+ llvm::Expected<std::unique_ptr<RISCVISAInfo>>
+ RISCVISAInfo::parseArchString(StringRef Arch, bool EnableExperimentalExtension,
+                               bool ExperimentalExtensionVersionCheck,
