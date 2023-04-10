@@ -1,0 +1,15 @@
+diff --git a/lib/Driver/ToolChains/CommonArgs.cpp b/lib/Driver/ToolChains/CommonArgs.cpp
+index 37a637ccaf36..3674ee97718a 100644
+--- a/lib/Driver/ToolChains/CommonArgs.cpp
++++ b/lib/Driver/ToolChains/CommonArgs.cpp
+@@ -612,9 +612,7 @@ void tools::addLTOOptions(const ToolChain &ToolChain, const ArgList &Args,
+ #endif
+ 
+     SmallString<1024> Plugin;
+-    llvm::sys::path::native(Twine(D.Dir) +
+-                                "/../" CLANG_INSTALL_LIBDIR_BASENAME +
+-                                PluginName + Suffix,
++    llvm::sys::path::native(Twine("@libllvmLibdir@") + PluginName + Suffix,
+                             Plugin);
+     CmdArgs.push_back(Args.MakeArgString(Twine(PluginPrefix) + Plugin));
+   }
