@@ -85,6 +85,9 @@
               ./flake.lock
             ];
           };
+          libxml2 = prev.libxml2.override {
+            pythonSupport = false;
+          };
           buildLlvmTools = pkgsBuildHost.llvmPackages_rivos.tools;
           targetLlvmLibraries = pkgsTargetTarget.llvmPackages_rivos.libraries or llvmPackages_rivos.libraries;
           targetLlvm = targetPackages.llvmPackages_rivos.llvm or llvmPackages_rivos.llvm;
