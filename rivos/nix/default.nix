@@ -225,7 +225,7 @@ in let
       nixSupport.cc-cflags = [
         # This has a bunch of C headers but also the module files like
         # iso_c_binding.
-        "-I${tools.flang-unwrapped.dev}/include/flang"
+        "-fintrinsic-modules-path ${tools.flang-unwrapped.dev}/include/flang"
         "-L${targetLlvmLibraries.flang-rt}/lib"
         "-flang-experimental-exec"
       ];
