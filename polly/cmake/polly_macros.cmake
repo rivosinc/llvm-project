@@ -45,8 +45,8 @@ macro(add_polly_library name)
     install(TARGETS ${name}
       COMPONENT ${name}
       EXPORT LLVMExports
-      LIBRARY DESTINATION lib${LLVM_LIBDIR_SUFFIX}
-      ARCHIVE DESTINATION lib${LLVM_LIBDIR_SUFFIX})
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}${LLVM_LIBDIR_SUFFIX}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}${LLVM_LIBDIR_SUFFIX})
     add_llvm_install_targets(install-${name}
       COMPONENT ${name})
   endif()
